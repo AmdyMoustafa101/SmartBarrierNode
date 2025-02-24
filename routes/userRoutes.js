@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/User');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 
 // Récupérer tous les utilisateurs
 router.get('/users', async (req, res) => {
@@ -106,6 +107,36 @@ router.delete('/users/:id', async (req, res) => {
     res.json({ message: 'Utilisateur supprimé avec succès' });
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+
+
+// Route de connexion
+router.post('/login', async (req, res) => {
+  const { email, motDePasse } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: 'Email ou mot de passe incorrect' });
+    }
+
+    const isMatch = await user.comparePassword(motDePasse);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Email ou mot de passe incorrect' });
+    }
+
+    //tester si l'utilisateur est bloquer 
+    if (user.archived) {
+      return res.status(403).json({ message: 'Utilisateur bloqué' });
+    }
+
+
+    const token = jwt.sign({ userId: user._id }, 'votre_secret_key', { expiresIn: '1h' });
+    res.json({ token: token, user: user });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 });
 

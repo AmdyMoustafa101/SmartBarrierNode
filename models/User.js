@@ -1,5 +1,5 @@
-// models/User.js
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
   nom: {
@@ -50,10 +50,25 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+// Hacher le mot de passe avant de sauvegarder l'utilisateur
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('motDePasse')) {
+    return next();
+  }
+  const salt = await bcrypt.genSalt(10);
+  this.motDePasse = await bcrypt.hash(this.motDePasse, salt);
+  next();
+});
+
 // Mettre à jour la date de mise à jour avant chaque sauvegarde
-userSchema.pre('save', function (next) {
+userSchema.pre('save', function(next) {
   this.dateMaj = Date.now();
   next();
 });
+
+// Méthode pour comparer les mots de passe
+userSchema.methods.comparePassword = async function(enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.motDePasse);
+};
 
 module.exports = mongoose.model('User', userSchema);
