@@ -188,6 +188,7 @@ router.patch('/recherchees/toggle-cible/:id', async (req, res) => {
     }
 
     voiture.estCible = !voiture.estCible; // Basculer la valeur de estCible
+    voiture.dateMaj = Date.now();
     await voiture.save();
 
     res.json(voiture);
