@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -7,7 +6,7 @@ const userRoutes = require('./routes/userRoutes');
 const voitureRouter = require('./routes/voitureRoutes');
 const logsRoutes = require('./routes/logsRoutes');
 const amendeRoutes = require('./routes/amendeRoutes');
-
+const { router: authRoutes, authMiddleware } = require('./routes/authRoutes');
 
 const app = express();
 
@@ -19,13 +18,14 @@ app.use(cors());
 connectDB();
 
 // Routes
-app.use('/api', userRoutes);
-app.use('/api/voitures', voitureRouter);
-app.use('/api/logs', logsRoutes);
-app.use('/api/amendes', amendeRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api', authMiddleware, userRoutes);
+app.use('/api/voitures', authMiddleware, voitureRouter);
+app.use('/api/logs', authMiddleware, logsRoutes);
+app.use('/api/amendes', authMiddleware, amendeRoutes);
 
 // Démarrage du serveur
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Serveur démarré sur le port ${PORT}`);
 });

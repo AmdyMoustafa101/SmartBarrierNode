@@ -8,7 +8,6 @@ const router = express.Router();
 router.post('/login', async (req, res) => {
   try {
     const { userId } = req.body;
-    console.log(userId);
     const log = new Log({ userId });
     await log.save();
     res.status(200).json({ message : 'Connexion enregistrée'});
