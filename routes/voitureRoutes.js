@@ -21,7 +21,9 @@ router.post('/', async (req, res) => {
 // Get all voitures
 router.get('/', async (req, res) => {
   try {
-    const voitures = await Voiture.find();
+    const voitures = await Voiture.find({
+      organisme: { $in: ['police', 'ambulance', 'gendarmerie'] }
+    });
     res.status(200).send(voitures);
   } catch (error) {
     res.status(500).send(error);
@@ -32,7 +34,7 @@ router.get('/', async (req, res) => {
 router.get('/recherchees', async (req, res) => {
   try {
     // Récupérer les voitures où estCible est true
-    const voituresRecherchees = await Voiture.find({ estCible: true });
+    const voituresRecherchees = await Voiture.find({ organisme: 'recherché' });
     res.json(voituresRecherchees);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -147,6 +149,47 @@ router.patch('/recherchees/archiver/:id', async (req, res) => {
     if (!voiture) return res.status(404).json({ message: 'Voiture non trouvée' });
     voiture.archived = true;
     await voiture.save();
+    res.json(voiture);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Route pour mettre à jour une voiture recherchée
+router.put('/recherchees/:id', async (req, res) => {
+  try {
+    const { plaque, modele, contact, estCible } = req.body;
+    const voiture = await Voiture.findById(req.params.id);
+
+    if (!voiture) {
+      return res.status(404).json({ message: 'Voiture non trouvée' });
+    }
+
+    // Mettre à jour les champs modifiables
+    if (plaque !== undefined) voiture.plaque = plaque;
+    if (modele !== undefined) voiture.modele = modele;
+    if (contact !== undefined) voiture.contact = contact;
+    if (estCible !== undefined) voiture.estCible = estCible;
+
+    await voiture.save();
+    res.json(voiture);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Route pour basculer l'attribut estCible d'une voiture
+router.patch('/recherchees/toggle-cible/:id', async (req, res) => {
+  try {
+    const voiture = await Voiture.findById(req.params.id);
+
+    if (!voiture) {
+      return res.status(404).json({ message: 'Voiture non trouvée' });
+    }
+
+    voiture.estCible = !voiture.estCible; // Basculer la valeur de estCible
+    await voiture.save();
+
     res.json(voiture);
   } catch (error) {
     res.status(400).json({ message: error.message });
