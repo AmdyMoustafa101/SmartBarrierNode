@@ -21,7 +21,7 @@ router.post('/', async (req, res) => {
 // Get all voitures
 router.get('/', async (req, res) => {
   try {
-    const voitures = await Voiture.find();
+    const voitures = await Voiture.find({ estCible: false });
     res.status(200).send(voitures);
   } catch (error) {
     res.status(500).send(error);
