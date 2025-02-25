@@ -16,6 +16,25 @@ function sendNewUserEmail(user, motDePasse) {
   });
 }
 
+//fonction pour envoyer un email automatique apres la capture d'une voiture volée
+function noticeByMail(contact) {
+  // code pour envoyer l'email
+  const mailOptions = {
+    from: 'ouzealdiey24@gmail.com', // Remplacez par votre email
+    to: contact, // Email du contact
+    subject: 'Voiture Retrouvée!',
+    text: `Bonjour, \n\nNous vous notifions de la capture de votre voiture sur l'autoroute .\n\nVeillez vous rapprocher de l'agent. `
+  }
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return console.log('Erreur lors de l\'envoi de l\'email :', error);
+    }
+    console.log('Email envoyé :', info.response);
+  });
+}
+
 module.exports = {
-  sendNewUserEmail
+  sendNewUserEmail,
+  noticeByMail
 };

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Voiture = require('../models/Voiture');
+const { noticeByMail } = require('../services/emailService');
 
 // Create a new voiture
 router.post('/', async (req, res) => {
@@ -189,6 +190,7 @@ router.patch('/recherchees/toggle-cible/:id', async (req, res) => {
 
     voiture.estCible = !voiture.estCible; // Basculer la valeur de estCible
     voiture.dateMaj = Date.now();
+    noticeByMail(voiture.contact);
     await voiture.save();
 
     res.json(voiture);
