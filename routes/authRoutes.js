@@ -58,10 +58,33 @@ router.post('/login', async (req, res) => {
   }
 });
 
+
+// Ajoutez cette route dans votre fichier de routes
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'Aucun utilisateur trouvé avec cet email.' });
+    }
+
+    const plainPassword = generatePassword(user.nom, user.prenom);
+    user.motDePasse = plainPassword;
+    await user.save();
+    await sendEmail(user, plainPassword);
+
+    res.status(200).json({ message: 'Un nouveau mot de passe a été envoyé à votre email.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+
 // Route de déconnexion
 router.post('/logout', async (req, res) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
-  
+
   if (!token) {
     return res.status(401).json({ message: 'Accès non autorisé' });
   }
