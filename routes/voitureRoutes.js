@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
 router.get('/recherchees', async (req, res) => {
   try {
     // Récupérer les voitures où estCible est true
-    const voituresRecherchees = await Voiture.find({ organisme: 'recherché' });
+    const voituresRecherchees = await Voiture.find({ organisme: null });
     res.json(voituresRecherchees);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -122,7 +122,7 @@ router.post('/recherchees', async (req, res) => {
       modele,
       telephone,
       contact,
-      organisme: 'recherché',
+      organisme: null,
       estCible: true
     });
     await nouvelleVoiture.save();

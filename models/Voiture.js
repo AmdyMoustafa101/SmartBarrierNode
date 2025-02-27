@@ -13,7 +13,7 @@ const voitureSchema = new mongoose.Schema({
   },
   archived: { type: Boolean, default: false },
   estCible: { type: Boolean, default: false },
-  organisme: { type: String, enum: ['police', 'gendarmerie', 'ambulance', 'recherché'], required: true },
+  organisme: { type: String, enum: ['police', 'gendarmerie', 'ambulance'], required: false },
   dateCreation: {
     type: Date,
     default: Date.now,
