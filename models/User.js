@@ -35,7 +35,7 @@ const userSchema = new mongoose.Schema({
   },
   organisme: {
     type: String,
-    enum: ['police', 'gendarmerie', 'ambulance'],
+    enum: ['police', 'gendarmerie', 'ambulance', 'Smart Barriere'],
     required: function() {
       return this.role === 'agent';
     },
