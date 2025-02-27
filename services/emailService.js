@@ -17,13 +17,14 @@ function sendNewUserEmail(user, motDePasse) {
 }
 
 //fonction pour envoyer un email automatique apres la capture d'une voiture volée
-function noticeByMail(contact) {
+function noticeByMail(voiture) {
   // code pour envoyer l'email
   const mailOptions = {
     from: 'ouzealdiey24@gmail.com', // Remplacez par votre email
-    to: contact, // Email du contact
+    to: voiture.contact, // Email du contact
     subject: 'Voiture Retrouvée!',
-    text: `Bonjour, \n\nNous vous notifions de la capture de votre voiture sur l'autoroute .\n\nVeillez vous rapprocher de l'agent. `
+    text: `Bonjour, \n\nUne voiture ayant été rcapturée sur l'Autoroute.\n\nVoici les informations de cette voiture : \n- Plaque : ${voiture.plaque} \n- Modèle : ${voiture.modele} \n- Contact : ${voiture.contact} \n`
+   
   }
 
   transporter.sendMail(mailOptions, (error, info) => {

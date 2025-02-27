@@ -21,7 +21,7 @@ connectDB();
 app.use('/api/auth', authRoutes);
 app.use('/api', authMiddleware, userRoutes);
 app.use('/api/voitures', authMiddleware, voitureRouter);
-app.use('/api/logs', authMiddleware, logsRoutes);
+app.use('/api/logs', logsRoutes);
 app.use('/api/amendes', authMiddleware, amendeRoutes);
 
 // Démarrage du serveur

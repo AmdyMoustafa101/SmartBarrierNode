@@ -8,7 +8,7 @@ const voitureSchema = new mongoose.Schema({
   archived: { type: Boolean, default: false },
   estCible: { type: Boolean, default: false },
   dateMaj: { type: Date, required: false },
-  organisme: { type: String, enum: ['police', 'gendarmerie', 'ambulance', 'recherché'], required: true }
+  organisme: { type: String, enum: ['police', 'gendarmerie', 'ambulance'], required: false }
 });
 
 const Voiture = mongoose.model('Voiture', voitureSchema);

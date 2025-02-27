@@ -61,6 +61,7 @@ router.post('/login', async (req, res) => {
 // Route de déconnexion
 router.post('/logout', async (req, res) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
+  
   if (!token) {
     return res.status(401).json({ message: 'Accès non autorisé' });
   }

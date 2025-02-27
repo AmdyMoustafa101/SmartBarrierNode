@@ -39,38 +39,23 @@ router.post('/log-action', async (req, res) => {
     }
   });
   
-  // Route pour récupérer le log correspondant à une date donnée
-  router.get('/:date', async (req, res) => {
-    try {
-      // Récupération de la chaîne de date depuis l'URL
-      const dateParam = req.params.date;
-      console.log("Recherche du log avec dateParam :", dateParam);
-  
-      // Vérifier que la chaîne de date est valide
-      if (isNaN(Date.parse(dateParam))) {
-        return res.status(400).json({ error: "Le format de date est invalide." });
-      }
-  
-      // Conversion de la chaîne en objet Date
-      const loginTime = new Date(dateParam);
-      console.log("Recherche du log avec loginTime :", loginTime);
-  
-      // Recherche du log correspondant dans la collection
-      const log = await Log.findOne({ loginTime });
-  
-      // Si aucun log n'est trouvé, on renvoie un 404
-      if (!log) {
-        return res.status(404).json({ error: 'Log non trouvé' });
-      }
-  
-      // Renvoi du log trouvé
-      return res.status(200).json(log);
-    } catch (error) {
-      console.error("Erreur lors de la recherche du log :", error);
-      return res.status(500).json({ error: 'Erreur serveur' });
+  // Route pour récupérer le log correspondant à une date de logout donnée pour un user specifique
+  router.get('/:userId/:logoutTime', async (req, res) => {
+    const { userId, logoutTime } = req.params;
+    const log = await Log.findOne({ userId, logoutTime });
+    if (log) {
+      res.status(200).json(log.actions);
+    } else {
+      res.status(404).json({ error : 'Log non trouvé'});
     }
   });
   
+
+  // Route pour récupérer le log correspondant à une date de login donnée pour un user specifique
+
+ 
+  
+ 
   
   // Route pour enregistrer la déconnexion de l'utilisateur
   router.post('/logout', async (req, res) => {
