@@ -116,10 +116,11 @@ router.patch('/unarchive/:id', async (req, res) => {
 // Route pour créer une voiture recherchée
 router.post('/recherchees', async (req, res) => {
   try {
-    const { plaque, modele, contact } = req.body;
+    const { plaque, modele, telephone, contact } = req.body;
     const nouvelleVoiture = new Voiture({
       plaque,
       modele,
+      telephone,
       contact,
       organisme: 'recherché',
       estCible: true
@@ -158,7 +159,7 @@ router.patch('/recherchees/archiver/:id', async (req, res) => {
 // Route pour mettre à jour une voiture recherchée
 router.put('/recherchees/:id', async (req, res) => {
   try {
-    const { plaque, modele, contact, estCible } = req.body;
+    const { plaque, modele, telephone, contact, estCible } = req.body;
     const voiture = await Voiture.findById(req.params.id);
 
     if (!voiture) {
@@ -168,6 +169,7 @@ router.put('/recherchees/:id', async (req, res) => {
     // Mettre à jour les champs modifiables
     if (plaque !== undefined) voiture.plaque = plaque;
     if (modele !== undefined) voiture.modele = modele;
+    if (modele !== undefined) voiture.telephone = telephone;
     if (contact !== undefined) voiture.contact = contact;
     if (estCible !== undefined) voiture.estCible = estCible;
 
@@ -188,6 +190,7 @@ router.patch('/recherchees/toggle-cible/:id', async (req, res) => {
     }
 
     voiture.estCible = !voiture.estCible; // Basculer la valeur de estCible
+    voiture.dateMaj = Date.now();
     await voiture.save();
 
     res.json(voiture);
