@@ -1,83 +1,72 @@
-from flask import Flask, request, jsonify
+from picamera2 import Picamera2
 import cv2
-import numpy as np
 import pytesseract
-import requests
+import requests  # Importation de requests pour envoyer les données au serveur Node.js
 
-app = Flask(__name__)
+# Initialisation de la caméra
+picam2 = Picamera2()
+picam2.configure(picam2.create_preview_configuration({"format": 'RGB888', "size": (640, 480)}))
+picam2.start()
 
-# Configuration
-NODEJS_API_URL = "http://votre-serveur-nodejs:3000/api/plates"
-TESSERACT_CONFIG = r'--oem 3 --psm 6 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+# Chargement du classificateur Haar pour la détection des plaques d'immatriculation
+plate_cascade = cv2.CascadeClassifier('/home/niassy/haarcascades/haarcascade_russian_plate_number.xml')
 
-@app.route('/upload', methods=['POST'])
-def handle_upload():
-    # Vérifier le type de contenu
-    if request.content_type != 'image/jpeg':
-        return "Unsupported Media Type", 415
+# Configuration de Tesseract OCR
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # Le chemin d'accès à l'exécutable tesseract
 
-    try:
-        # Lire les données de l'image
-        image_data = request.get_data()
+# URL de l'API Node.js à laquelle nous allons envoyer les données
+node_server_url = "http://192.168.1.88:3000/receive-plate"
 
-        # Traitement de l'image
-        plate_text = process_image(image_data)
+try:
+    while True:
+        # Capture de l'image depuis la caméra
+        frame = picam2.capture_array()
 
-        if plate_text:
-            # Envoi à l'API Node.js
-            response = requests.post(
-                NODEJS_API_URL,
-                json={'plate': plate_text},
-                timeout=5
-            )
-            return jsonify({"message": f"Plaque détectée: {plate_text}"}), 200
-        return jsonify({"message": "Aucune plaque trouvée"}), 404
+        # Conversion de l'image en niveaux de gris pour la détection
+        gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Détection des plaques d'immatriculation
+        plates = plate_cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=4)
 
-def process_image(image_data):
-    try:
-        # Conversion des données en image OpenCV
-        nparr = np.frombuffer(image_data, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        # Dessin des rectangles autour des plaques détectées
+        for (x, y, w, h) in plates:
+            # Dessiner un rectangle autour de la plaque détectée
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)  # rectangle vert pour la plaque
 
-        # Prétraitement de l'image
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        blur = cv2.GaussianBlur(gray, (5, 5), 0)
-        thresh = cv2.adaptiveThreshold(blur, 255,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY_INV, 11, 2)
+            # Extraire l'image de la plaque
+            plate_region = frame[y:y + h, x:x + w]
 
-        # Recherche des contours
-        contours, _ = cv2.findContours(thresh,
-            cv2.RETR_TREE,
-            cv2.CHAIN_APPROX_SIMPLE)
+            # Prétraitement de l'image avant OCR
+            _, plate_region_bin = cv2.threshold(plate_region, 150, 255, cv2.THRESH_BINARY)
+            plate_region_bin = cv2.GaussianBlur(plate_region_bin, (5, 5), 0)
 
-        # Filtrage des contours pour trouver la plaque
-        for cnt in contours:
-            x, y, w, h = cv2.boundingRect(cnt)
-            aspect_ratio = w / float(h)
-            area = cv2.contourArea(cnt)
+            # Affichage de la plaque dans la console (convertie en format texte via OCR)
+            print("Plaque détectée!")
 
-            if 3 < aspect_ratio < 5 and area > 1000:
-                # Extraction de la ROI
-                roi = img[y:y+h, x:x+w]
+            # Utilisation de Tesseract OCR pour lire la plaque
+            plate_text = pytesseract.image_to_string(plate_region_bin, config='--psm 6').strip()
+            plate_text = ''.join(e for e in plate_text if e.isalnum())  # Nettoyage du texte
 
-                # OCR avec Tesseract
-                text = pytesseract.image_to_string(roi, config=TESSERACT_CONFIG)
+            if plate_text:
+                print(f"Plaque extraite : {plate_text}")
 
-                # Nettoyage du texte
-                clean_text = ''.join(c for c in text if c.isalnum()).upper()
+                # Envoi des informations de la plaque d'immatriculation au serveur Node.js
+                data = {"plate": plate_text}
+                try:
+                    response = requests.post(node_server_url, json=data)
+                    if response.status_code == 200:
+                        print("Plaque envoyée avec succès au serveur Node.js")
+                    else:
+                        print(f"Erreur lors de l'envoi de la plaque au serveur : {response.status_code}")
+                except requests.exceptions.RequestException as e:
+                    print(f"Erreur de connexion au serveur : {e}")
 
-                if len(clean_text) >= 6:
-                    return clean_text
+        # Affichage de l'image avec les plaques détectées
+        cv2.imshow("Camera", frame)
 
-        return None
-
-    except Exception as e:
-        print(f"Error processing image: {e}")
-        return None
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, threaded=True)
+        # Quitter l'application si la touche 'q' est pressée
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+finally:
+    picam2.stop()
+    cv2.destroyAllWindows()
