@@ -35,7 +35,29 @@ function noticeByMail(voiture) {
   });
 }
 
+//fonction pour envoyer un email automatique apres la facturation d'une voiture
+function factMail(voiture, montant) {
+  // code pour envoyer l'email
+  const mailOptions = {
+    from: 'ouzealdiey24@gmail.com',
+    to: voiture.contact,
+    subject: 'Facturation',
+    text: `Bonjour, \n\nVotre facture pour la voiture ${voiture.plaque} a été générée.\n\nVoici les informations de cette facture : \n- Plaque : ${voiture.plaque} \n- Modèle : ${voiture.modele} \n- Montant : ${montant} \n`
+    // code pour ajouter le lien de téléchargement de la facture
+    // mailOptions.attachments = [{ filename: 'facture.pdf', path: '/path/to/facture.pdf' }]
+  }
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      return console.log('Erreur lors de l\'envoi de l\'email :', error);
+    }
+    console.log('Email envoyé :', info.response);
+  
+  })
+}
+
+
 module.exports = {
   sendNewUserEmail,
-  noticeByMail
+  noticeByMail,
+  factMail
 };
