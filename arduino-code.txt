@@ -6,8 +6,12 @@ const int echoPin = 3;     // Broche ECHO du capteur ultrason
 const int servo1Pin = 9;   // Broche du servomoteur 1
 const int servo2Pin = 10;  // Broche du servomoteur 2
 const int buzzerPin = 7;   // Broche du buzzer
-const int buttonPin = 4;   // Nouvelle broche pour le bouton
+const int buttonPin = 4;   // Broche du bouton
 
+// Configuration communication
+const int BUFFER_SIZE = 32;
+char serialBuffer[BUFFER_SIZE];
+int bufferIndex = 0;
 
 // Seuil de détection (en cm)
 const int distanceThreshold = 30;
@@ -19,8 +23,7 @@ Servo servo2;
 // Variables d'état
 bool isWaitingForCar = false;
 int receivedCommand = -1;
-bool lastButtonState = LOW; // État pull-up
-
+bool lastButtonState = LOW;
 
 void setup() {
   Serial.begin(9600);
@@ -29,9 +32,7 @@ void setup() {
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
   pinMode(buzzerPin, OUTPUT);
-  pinMode(buttonPin, INPUT_PULLUP); // Activation de la résistance pull-up interne
-  pinMode(12, OUTPUT);
-
+  pinMode(buttonPin, INPUT_PULLUP);
 
   // Attacher les servomoteurs
   servo1.attach(servo1Pin);
@@ -43,54 +44,78 @@ void setup() {
 }
 
 void loop() {
-
-   // Lecture du bouton
+  // Lecture du bouton
   bool currentButtonState = digitalRead(buttonPin);
-  // Détection front descendant (bouton appuyé)
   if (currentButtonState == HIGH && lastButtonState == LOW) {
     servo2.write(0);
-    beep(600, 200); // Bip spécifique pour le bouton
+    beep(600, 200);
     Serial.println("Bouton pressé - Servo 2 OUVERT");
-    delay(50); // Anti-rebond
+    delay(50);
   }
   lastButtonState = currentButtonState;
 
-
-  // Lire les commandes série
-  if (Serial.available() > 0) {
-    receivedCommand = Serial.parseInt();
+  // Lecture série
+  while (Serial.available() > 0) {
+    char c = Serial.read();
     
-    if (receivedCommand == 1) {
-      servo1.write(90);
-      beep(1000, 200); // Bip aigu pour ouverture
-      Serial.println("Servo 1 ouvert");
-      isWaitingForCar = true;
+    // Gestion du buffer circulaire
+    if (bufferIndex < BUFFER_SIZE - 1) {
+      serialBuffer[bufferIndex++] = c;
     }
-    else if (receivedCommand == 2) {
-      servo2.write(90);
-      beep(800, 100); // Double bip pour servo2
-      delay(100);
-      beep(800, 100);
-      Serial.println("Servo 2 fermé ");
+    
+    // Détection de fin de commande
+    if (c == '\n') {
+      serialBuffer[bufferIndex] = '\0'; // Terminaison de chaîne
+      processCommand(serialBuffer);
+      bufferIndex = 0; // Reset buffer
     }
   }
 
   // Gestion de la fermeture automatique du servo1
   if (isWaitingForCar) {
     float distance = getDistance();
-    
+   
     if (distance > distanceThreshold) {
       servo1.write(0);
-      beep(500, 300); // Bip grave pour fermeture
+      beep(500, 300);
       Serial.println("Voiture partie - Servo 1 fermé");
       isWaitingForCar = false;
     }
-    
     delay(100);
   }
 }
 
-// Fonction de mesure de distance
+void processCommand(char* buffer) {
+  // Vérification du format "CMDx"
+  if (strncmp(buffer, "CMD", 3) == 0) {
+    int command = atoi(buffer + 3); // Convertit le nombre après CMD
+    
+    if (command == 1) {
+      servo1.write(90);
+      beep(1000, 200);
+      Serial.println("Servo 1 ouvert");
+      delay(700);
+      isWaitingForCar = true;
+    }
+    else if (command == 2) {
+      servo2.write(90);
+      beep(800, 100);
+      delay(100);
+      beep(800, 100);
+      Serial.println("Servo 2 fermé");
+    }
+    else if (command == 0) {
+      // Commande spéciale pour reset
+      servo1.write(0);
+      servo2.write(0);
+      beep(900, 500);
+      delay(500);
+      beep(900, 500);
+      Serial.println("Reset tous servos");
+    }
+  }
+}
+
 float getDistance() {
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
@@ -99,12 +124,9 @@ float getDistance() {
   digitalWrite(trigPin, LOW);
 
   long duration = pulseIn(echoPin, HIGH);
-  float distance = duration * 0.034 / 2;
-  
-  return distance;
+  return duration * 0.034 / 2;
 }
 
-// Fonction de sonnerie personnalisée
 void beep(int frequency, int duration) {
   tone(buzzerPin, frequency);
   delay(duration);

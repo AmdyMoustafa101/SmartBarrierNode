@@ -85,7 +85,7 @@ app.post('/receive-plate', async (req, res) => {
       }
     }
 
-    if (voiture.estCibles) {
+    if (voiture.estCible) {
       return res.status(200).json({ 
         command: 2,
         exists: true,
