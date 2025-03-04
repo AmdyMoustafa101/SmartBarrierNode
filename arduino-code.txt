@@ -1,0 +1,112 @@
+#include <Servo.h>
+
+// Définir les broches
+const int trigPin = 2;     // Broche TRIG du capteur ultrason
+const int echoPin = 3;     // Broche ECHO du capteur ultrason
+const int servo1Pin = 9;   // Broche du servomoteur 1
+const int servo2Pin = 10;  // Broche du servomoteur 2
+const int buzzerPin = 7;   // Broche du buzzer
+const int buttonPin = 4;   // Nouvelle broche pour le bouton
+
+
+// Seuil de détection (en cm)
+const int distanceThreshold = 30;
+
+// Créer les objets Servo
+Servo servo1;
+Servo servo2;
+
+// Variables d'état
+bool isWaitingForCar = false;
+int receivedCommand = -1;
+bool lastButtonState = LOW; // État pull-up
+
+
+void setup() {
+  Serial.begin(9600);
+  
+  // Configuration des broches
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(buttonPin, INPUT_PULLUP); // Activation de la résistance pull-up interne
+  pinMode(12, OUTPUT);
+
+
+  // Attacher les servomoteurs
+  servo1.attach(servo1Pin);
+  servo2.attach(servo2Pin);
+
+  // Position initiale
+  servo1.write(0);
+  servo2.write(0);
+}
+
+void loop() {
+
+   // Lecture du bouton
+  bool currentButtonState = digitalRead(buttonPin);
+  // Détection front descendant (bouton appuyé)
+  if (currentButtonState == HIGH && lastButtonState == LOW) {
+    servo2.write(0);
+    beep(600, 200); // Bip spécifique pour le bouton
+    Serial.println("Bouton pressé - Servo 2 OUVERT");
+    delay(50); // Anti-rebond
+  }
+  lastButtonState = currentButtonState;
+
+
+  // Lire les commandes série
+  if (Serial.available() > 0) {
+    receivedCommand = Serial.parseInt();
+    
+    if (receivedCommand == 1) {
+      servo1.write(90);
+      beep(1000, 200); // Bip aigu pour ouverture
+      Serial.println("Servo 1 ouvert");
+      isWaitingForCar = true;
+    }
+    else if (receivedCommand == 2) {
+      servo2.write(90);
+      beep(800, 100); // Double bip pour servo2
+      delay(100);
+      beep(800, 100);
+      Serial.println("Servo 2 fermé ");
+    }
+  }
+
+  // Gestion de la fermeture automatique du servo1
+  if (isWaitingForCar) {
+    float distance = getDistance();
+    
+    if (distance > distanceThreshold) {
+      servo1.write(0);
+      beep(500, 300); // Bip grave pour fermeture
+      Serial.println("Voiture partie - Servo 1 fermé");
+      isWaitingForCar = false;
+    }
+    
+    delay(100);
+  }
+}
+
+// Fonction de mesure de distance
+float getDistance() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  long duration = pulseIn(echoPin, HIGH);
+  float distance = duration * 0.034 / 2;
+  
+  return distance;
+}
+
+// Fonction de sonnerie personnalisée
+void beep(int frequency, int duration) {
+  tone(buzzerPin, frequency);
+  delay(duration);
+  noTone(buzzerPin);
+}
