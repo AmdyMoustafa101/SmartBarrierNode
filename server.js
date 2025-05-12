@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+require('dotenv').config();
 const cors = require('cors');
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
@@ -14,6 +15,8 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
+const PORT = process.env.PORT ;
+
 // Connexion à MongoDB
 connectDB();
 
@@ -25,7 +28,6 @@ app.use('/api/logs', logsRoutes);
 app.use('/api/amendes', authMiddleware, amendeRoutes);
 
 // Démarrage du serveur
-const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
 });

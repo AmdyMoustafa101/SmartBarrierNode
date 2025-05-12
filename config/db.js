@@ -1,16 +1,20 @@
 const mongoose = require('mongoose');
+require('dotenv').config();
+
+db_url = process.env.MONGODB_CONNECT_URL;
+if (!db_url) {
+  console.error('MongoDB connection URL is not defined in .env file');
+  process.exit(1); 
+}
 
 // Connexion à MongoDB
 const connectDB = async () => {
   try {
-    await mongoose.connect('mongodb://localhost:27017/SmartBarrier', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(db_url);
     console.log('Connected to MongoDB');
   } catch (error) {
     console.error('Connection error:', error);
-    process.exit(1); // Quitte le processus si la connexion échoue
+    process.exit(1); 
   }
 };
 

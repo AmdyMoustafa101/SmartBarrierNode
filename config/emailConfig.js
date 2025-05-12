@@ -1,10 +1,15 @@
 const nodemailer = require('nodemailer');
+require('dotenv').config();
+
+// Configuration du transporteur Nodemailer
+const email = process.env.EMAIL;
+const password = process.env.PASSWORD;
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Vous pouvez utiliser d'autres services comme 'SendGrid', 'Mailgun', etc.
+  service: 'gmail', 
   auth: {
-    user: 'ouzealdiey24@gmail.com', // Remplacez par votre email
-    pass: 'pqsy ajwt uymo rdzm ' // Remplacez par votre mot de passe
+    user: email, 
+    pass: password,
   }
 });
 

@@ -7,6 +7,9 @@ const Amende = require('./models/Amende');
 const Facture = require('./models/Facture');
 const Payement = require('./models/Payement');
 const { factMail } = require('./services/emailService');
+require('dotenv').config();
+
+const PORT = process.env.PORT_FLUX ;
 
 // Connexion à MongoDB
 connectDB();
@@ -148,7 +151,6 @@ app.post('/receive-plate', async (req, res) => {
   }
 });
 
-const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Serveur en écoute sur le port ${PORT}`);
 });
