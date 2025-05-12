@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-require('dotenv').config();
 
 db_url = process.env.MONGODB_CONNECT_URL;
 if (!db_url) {
