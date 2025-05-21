@@ -15,6 +15,18 @@ router.get('/users', async (req, res) => {
   }
 });
 
+// recupérer un user par son ID
+router.get('/users/:id', async (req, res) => {
+  try {
+    const id = req.params.id
+    const user = await User.findById(id)
+
+    res.status(200).json({user : user })
+
+  } catch (error) {
+    res.status(404).json({ message: error.message })
+  }
+})
 
 // Fonction pour générer un mot de passe
 function generatePassword(nom, prenom) {
